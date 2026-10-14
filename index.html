@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>קמפוס עירוני רבין | מחשבון משרות ושעות מורים בתיכון</title>
+  <link rel="icon" type="image/png" href="school-logo.png">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#2563eb',
+            'primary-hover': '#1d4ed8',
+            secondary: '#4f46e5',
+            oz: '#4338ca',
+            ofek: '#0284c7',
+            combined: '#7c3aed'
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- Printable official report area -->
+  <div id="printOnlyReportArea" class="print-only"></div>
+
+  <!-- Header Bar -->
+  <header class="no-print bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- School Logo, Brand & Badges -->
+      <div class="flex items-center gap-3.5">
+        <div class="bg-white p-1 rounded-2xl border border-slate-200/90 shadow-sm flex items-center justify-center shrink-0">
+          <img src="school-logo.png" alt="קמפוס עירוני רבין" class="h-14 sm:h-16 w-auto object-contain hover:scale-105 transition-transform duration-200">
+        </div>
+        <div>
+          <div class="flex flex-wrap items-center gap-2 mb-1">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-black bg-purple-50 text-purple-900 border border-purple-200">
+              <span class="w-1.5 h-1.5 rounded-full bg-purple-600"></span>
+              <span data-i18n="schoolName">קמפוס עירוני רבין</span>
+            </span>
+            <span class="hidden lg:inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold text-purple-700 bg-purple-50/50" data-i18n="schoolMotto">
+              מצויינות שמובילה לאקדמיה
+            </span>
+            <span class="hidden md:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200" data-i18n="highSchoolBadge">
+              מותאם לתיכון ולשש-שנתי
+            </span>
+          </div>
+          <h1 class="text-xl sm:text-2xl font-black tracking-tight text-slate-900" data-i18n="appTitle">
+            מערכית | מחשבון משרות ושעות מורים
+          </h1>
+          <p class="text-xs sm:text-sm text-slate-500 hidden sm:block" data-i18n="appSubtitle">
+            מערכת חישוב אחוזי משרה, שעות פרונטליות, פרטניות ושעות נוספות לפי נהלי משרד החינוך
+          </p>
+        </div>
+      </div>
+
+      <!-- Action Buttons & Language Switcher -->
+      <div class="flex items-center gap-3">
+        <!-- Badge MoE -->
+        <div class="hidden xl:flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span data-i18n="updatedMoeBadge">מעודכן לתקנות משרד החינוך</span>
+        </div>
+
+        <!-- Export Excel Button -->
+        <button id="exportExcelBtn" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition-all shadow-sm">
+          <span>📊</span>
+          <span data-i18n="exportExcel">ייצוא לאקסל</span>
+        </button>
+
+        <!-- Print Button -->
+        <button id="printReportBtn" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition-all shadow-sm">
+          <span>🖨️</span>
+          <span data-i18n="printReport">הדפסת דוח</span>
+        </button>
+
+        <!-- Language Selector -->
+        <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-300">
+          <span class="text-sm px-1.5">🌐</span>
+          <select id="langSelect" class="bg-transparent text-xs sm:text-sm font-semibold text-slate-700 py-1 pe-2 ps-1 outline-none cursor-pointer">
+            <option value="he">עברית (עב)</option>
+            <option value="en">English (EN)</option>
+            <option value="ru">Русский (RU)</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="no-print bg-white border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex space-x-2 rtl:space-x-reverse overflow-x-auto py-2">
+        <button class="tab-btn active" data-tab="calculator">
+          <span>🧮</span>
+          <span data-i18n="tabCalculator">מחשבון מורה אישי</span>
+        </button>
+        <button class="tab-btn" data-tab="roster">
+          <span>📋</span>
+          <span data-i18n="tabRoster">טבלת מורי בית הספר</span>
+        </button>
+        <button class="tab-btn" data-tab="reverse">
+          <span>🎯</span>
+          <span data-i18n="tabReverse">מתכנן משרה (חישוב הפוך)</span>
+        </button>
+        <button class="tab-btn" data-tab="rulesGuide">
+          <span>📖</span>
+          <span data-i18n="tabRulesGuide">מדריך נהלי משרד החינוך</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content Container -->
+  <main class="no-print flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ========================================== -->
+    <!-- TAB 1: TEACHER CALCULATOR (מחשבון מורה)   -->
+    <!-- ========================================== -->
+    <section id="tabSection-calculator" class="tab-content">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Form Column (Inputs) -->
+        <div class="lg:col-span-6 space-y-5">
+          <div class="glass-panel p-5 sm:p-6 shadow-sm">
+            
+            <div class="flex items-center justify-between border-b border-slate-200 pb-4 mb-5">
+              <div class="flex items-center gap-2">
+                <span class="text-xl">👩‍🏫</span>
+                <h2 class="text-lg font-bold text-slate-900" data-i18n="teacherDetails">פרטי המורה והגדרת שעות</h2>
+              </div>
+              <button id="resetFormBtn" type="button" class="text-xs font-semibold text-slate-500 hover:text-red-600 transition-colors" data-i18n="resetForm">
+                איפוס שדות
+              </button>
+            </div>
+
+            <!-- Basic Info: Name, ID, Age -->
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 mb-5">
+              <!-- Teacher Name -->
+              <div class="sm:col-span-6">
+                <label class="block text-xs font-bold text-slate-700 mb-1" data-i18n="teacherName">שם המורה</label>
+                <input type="text" id="teacherNameInput" class="form-input" data-i18n-placeholder="teacherNamePlaceholder" placeholder="לדוגמה: שרה כהן">
+              </div>
+
+              <!-- Teacher ID/Code -->
+              <div class="sm:col-span-3">
+                <label class="block text-xs font-bold text-slate-700 mb-1">ת"ז / קוד</label>
+                <input type="text" id="teacherIdInput" class="form-input" placeholder="012345678">
+              </div>
+
+              <!-- Teacher Age -->
+              <div class="sm:col-span-3">
+                <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span data-i18n="teacherAge">גיל המורה</span>
+                  <span class="text-slate-400 font-normal">🎂</span>
+                </label>
+                <input type="number" id="teacherAgeInput" min="20" max="80" value="42" class="form-input text-center font-bold">
+              </div>
+            </div>
+
+            <!-- Dynamic Age Reduction Hint Badge -->
+            <div id="ageHoursHintBadge" class="hidden p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold mb-5 flex items-center gap-2">
+            </div>
+
+            <!-- Reform Selector Cards -->
+            <div class="mb-5">
+              <label class="block text-xs font-bold text-slate-700 mb-2" data-i18n="reformAffiliation">שייכות לרפורמה</label>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                
+                <!-- Combined Reform (Recommended for 6-year school) -->
+                <div class="reform-card selected flex flex-col justify-between" data-reform="combined">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-base">🤝</span>
+                    <span class="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">שש-שנתי</span>
+                  </div>
+                  <div class="font-bold text-xs text-slate-800" data-i18n="reformCombined">
+                    משרה משולבת
+                  </div>
+                  <div class="text-[11px] text-slate-500 mt-1">אופק חדש + עוז לתמורה</div>
+                </div>
+
+                <!-- Oz LeTmura Only -->
+                <div class="reform-card flex flex-col justify-between" data-reform="oz">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-base">🏛️</span>
+                    <span class="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700">י'-י"ב</span>
+                  </div>
+                  <div class="font-bold text-xs text-slate-800" data-i18n="reformOzOnly">
+                    עוז לתמורה בלבד
+                  </div>
+                  <div class="text-[11px] text-slate-500 mt-1">חטיבה עליונה</div>
+                </div>
+
+                <!-- Ofek Hadash Only -->
+                <div class="reform-card flex flex-col justify-between" data-reform="ofek">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-base">🌱</span>
+                    <span class="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">ז'-ט'</span>
+                  </div>
+                  <div class="font-bold text-xs text-slate-800" data-i18n="reformOfekOnly">
+                    אופק חדש בלבד
+                  </div>
+                  <div class="text-[11px] text-slate-500 mt-1">חטיבת ביניים</div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Frontal Hours Inputs -->
+            <div class="space-y-3.5 mb-5 p-4 rounded-xl bg-slate-50/70 border border-slate-200">
+              
+              <!-- Ofek Frontal Hours Input -->
+              <div id="ofekHoursContainer" class="transition-all">
+                <div class="flex justify-between items-center mb-1">
+                  <label class="text-xs font-bold text-blue-900 flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                    <span data-i18n="frontalHoursOfek">שעות הוראה פרונטליות באופק חדש</span>
+                  </label>
+                  <span class="text-[11px] text-slate-500">בסיס משרה: 21 ש"ש</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <input type="range" min="0" max="30" step="0.5" value="10" class="w-full accent-blue-600" oninput="document.getElementById('frontalOfekInput').value = this.value; document.getElementById('frontalOfekInput').dispatchEvent(new Event('input'))">
+                  <input type="number" id="frontalOfekInput" min="0" max="35" step="0.5" value="10" class="form-input w-24 text-center font-bold text-blue-700">
+                </div>
+              </div>
+
+              <!-- Oz Frontal Hours Input -->
+              <div id="ozHoursContainer" class="transition-all">
+                <div class="flex justify-between items-center mb-1">
+                  <label class="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                    <span data-i18n="frontalHoursOz">שעות הוראה פרונטליות בעוז לתמורה</span>
+                  </label>
+                  <span class="text-[11px] text-slate-500">בסיס משרה: 24 ש"ש</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <input type="range" min="0" max="30" step="0.5" value="12" class="w-full accent-indigo-600" oninput="document.getElementById('frontalOzInput').value = this.value; document.getElementById('frontalOzInput').dispatchEvent(new Event('input'))">
+                  <input type="number" id="frontalOzInput" min="0" max="35" step="0.5" value="12" class="form-input w-24 text-center font-bold text-indigo-700">
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Additional Options: Motherhood & Roles -->
+            <div class="space-y-3.5 mb-6 pt-3 border-t border-slate-200">
+              
+              <!-- Motherhood Checkbox Container -->
+              <div class="p-3 rounded-xl border border-pink-200 bg-pink-50/40">
+                <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input type="checkbox" id="isMotherInput" class="w-4 h-4 rounded text-pink-600 focus:ring-pink-500 accent-pink-600">
+                  <span class="text-xs font-bold text-slate-800" data-i18n="isMother">זכאות למשרת אם (אם לילד עד גיל 14)</span>
+                  <span class="text-slate-400 text-xs cursor-help" title="לפי משה&quot;ח: משרה מעל 79% מזכה בקיצור 2 שעות שהייה שבועיות בביה&quot;ס ללא פגיעה בשכר">ℹ️</span>
+                </label>
+                <!-- Dynamic Mother Hours Status Hint -->
+                <div id="motherHourHintBadge" class="hidden mt-2 p-2 rounded-lg text-xs font-semibold"></div>
+              </div>
+
+              <!-- Additional School Roles Container -->
+              <div class="p-3.5 rounded-xl border border-purple-200 bg-purple-50/40 space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <div class="text-xs font-bold text-purple-950" data-i18n="additionalRoles">תפקידים ושעות גמול נוספות</div>
+                  <span id="roleHoursTotalPill" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-200 text-purple-900">0.0 ש"ש</span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <label class="flex items-center justify-between p-2 rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-white bg-white/80 cursor-pointer text-xs font-semibold transition-all">
+                    <span data-i18n="roleEducator">מחנך כיתה</span>
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[10px] font-bold text-purple-700 bg-purple-100 px-1 py-0.5 rounded">+2</span>
+                      <input type="checkbox" id="roleEducatorInput" class="rounded text-purple-600 accent-purple-600">
+                    </div>
+                  </label>
+                  <label class="flex items-center justify-between p-2 rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-white bg-white/80 cursor-pointer text-xs font-semibold transition-all">
+                    <span data-i18n="roleGradeCoordinator">רכז שכבה</span>
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[10px] font-bold text-purple-700 bg-purple-100 px-1 py-0.5 rounded">+3</span>
+                      <input type="checkbox" id="roleGradeCoordInput" class="rounded text-purple-600 accent-purple-600">
+                    </div>
+                  </label>
+                  <label class="flex items-center justify-between p-2 rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-white bg-white/80 cursor-pointer text-xs font-semibold transition-all">
+                    <span data-i18n="roleSubjectCoordinator">רכז מקצוע</span>
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[10px] font-bold text-purple-700 bg-purple-100 px-1 py-0.5 rounded">+2</span>
+                      <input type="checkbox" id="roleSubjectCoordInput" class="rounded text-purple-600 accent-purple-600">
+                    </div>
+                  </label>
+                </div>
+
+                <!-- Other weekly role hours input -->
+                <div class="flex items-center justify-between pt-1">
+                  <label class="text-xs font-medium text-slate-700" data-i18n="roleOtherHours">שעות תפקיד נוספות (שעות שבועיות)</label>
+                  <input type="number" id="otherRoleHoursInput" min="0" max="25" step="0.5" value="0" class="form-input w-20 text-center font-bold py-1 border-purple-200">
+                </div>
+
+                <!-- Count Roles in Percentage Toggle -->
+                <label class="flex items-center gap-2 pt-1 border-t border-purple-100 cursor-pointer select-none">
+                  <input type="checkbox" id="countRolesInPercentageInput" checked class="w-3.5 h-3.5 rounded text-purple-600 focus:ring-purple-500 accent-purple-600">
+                  <span class="text-[11px] font-semibold text-purple-900" data-i18n="countRolesInPercentageLabel">שקלל שעות תפקיד באחוז המשרה (% משרה)</span>
+                </label>
+              </div>
+
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center gap-3 pt-4 border-t border-slate-200">
+              <button id="saveToRosterBtn" type="button" class="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-primary hover:bg-primary-hover shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
+                <span>💾</span>
+                <span data-i18n="saveToRoster">שמור לרשימת מורי בית הספר</span>
+              </button>
+              
+              <button id="cancelEditBtn" type="button" class="hidden py-3 px-4 rounded-xl font-bold text-slate-600 bg-slate-200 hover:bg-slate-300 transition-all" data-i18n="cancelEdit">
+                בטל עריכה
+              </button>
+
+              <button id="printCurrentTeacherBtn" type="button" class="py-3 px-4 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 transition-all" title="הדפסת דוח מורה רשמי">
+                <span>🖨️</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Results Column (Metrics & Cards) -->
+        <div class="lg:col-span-6 space-y-5">
+          <div class="glass-panel p-5 sm:p-6 shadow-sm">
+            
+            <div class="flex items-center justify-between border-b border-slate-200 pb-4 mb-5">
+              <div class="flex items-center gap-2">
+                <span class="text-xl">📊</span>
+                <h2 class="text-lg font-bold text-slate-900" data-i18n="calculationResults">תוצאות חישוב משרה</h2>
+              </div>
+              <div id="resStatusBadge" class="badge-status badge-full-time">
+                <span class="inline-block w-2 h-2 rounded-full bg-emerald-600"></span>
+                <span>משרה מלאה (100%)</span>
+              </div>
+            </div>
+
+            <!-- Big Job Percentage Banner -->
+            <div class="bg-gradient-to-br from-slate-900 to-blue-950 text-white rounded-2xl p-5 shadow-lg relative overflow-hidden mb-5">
+              <div class="relative z-10 flex items-center justify-between">
+                <div>
+                  <span class="text-xs uppercase tracking-wider text-blue-200 font-bold" data-i18n="totalJobPercentage">אחוז משרה כולל</span>
+                  <div id="resJobPercentage" class="text-4xl sm:text-5xl font-black tracking-tight text-white mt-1">
+                    100.00%
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs text-blue-200 font-semibold" data-i18n="totalWeeklyHours">סה"כ שעות שבועיות בביה"ס</span>
+                  <div class="text-2xl sm:text-3xl font-extrabold text-blue-300 mt-1">
+                    <span id="resWeeklyHours">38.0</span> <span class="text-xs font-normal">שעות</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Animated Progress Bar -->
+              <div class="mt-4 pt-3 border-t border-white/10">
+                <div class="flex justify-between text-[11px] text-blue-200 font-semibold mb-1">
+                  <span>0%</span>
+                  <span>50%</span>
+                  <span>100% (תקן)</span>
+                  <span>125% (מקס)</span>
+                </div>
+                <div class="w-full bg-white/20 rounded-full h-3 overflow-hidden p-0.5">
+                  <div id="resProgressBar" class="progress-bar-fill h-full bg-emerald-500 rounded-full" style="width: 71.4%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notice & Recommendation Box -->
+            <div id="resNoticeBox" class="p-3 rounded-lg border text-sm mb-5">
+            </div>
+
+            <!-- Key Metric Cards Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
+              
+              <!-- Frontal Hours -->
+              <div class="stat-widget primary">
+                <div>
+                  <div class="text-[11px] font-bold text-slate-500" data-i18n="frontalHoursCard">שעות הוראה (פרונטלי)</div>
+                  <div class="text-2xl font-black text-slate-900 mt-0.5" id="resFrontalHours">22.0</div>
+                </div>
+              </div>
+
+              <!-- Role Hours -->
+              <div class="stat-widget purple">
+                <div>
+                  <div class="text-[11px] font-bold text-purple-700" data-i18n="roleHoursCard">שעות תפקיד וגמול</div>
+                  <div class="text-2xl font-black text-purple-800 mt-0.5" id="resRoleHours">0.0</div>
+                </div>
+              </div>
+
+              <!-- Individual Hours -->
+              <div class="stat-widget primary">
+                <div>
+                  <div class="text-[11px] font-bold text-slate-500" data-i18n="individualHoursCard">שעות פרטניות</div>
+                  <div class="text-2xl font-black text-blue-700 mt-0.5" id="resIndividualHours">5.5</div>
+                </div>
+              </div>
+
+              <!-- Staying Hours -->
+              <div class="stat-widget warning">
+                <div>
+                  <div class="text-[11px] font-bold text-slate-500" data-i18n="stayingHoursCard">שעות שהייה וישיבות</div>
+                  <div class="text-2xl font-black text-amber-600 mt-0.5" id="resStayingHours">10.5</div>
+                </div>
+              </div>
+
+              <!-- Overtime Hours -->
+              <div class="stat-widget rose">
+                <div>
+                  <div class="text-[11px] font-bold text-slate-500" data-i18n="overtimeHoursCard">שעות נוספות (>100%)</div>
+                  <div class="text-2xl font-black text-rose-600 mt-0.5" id="resOvertimeHours">0.0</div>
+                </div>
+              </div>
+
+              <!-- Age Reduction Awarded -->
+              <div class="stat-widget success">
+                <div>
+                  <div class="text-[11px] font-bold text-slate-500" data-i18n="ageReductionCard">הפחתת שעות גיל</div>
+                  <div class="text-2xl font-black text-emerald-600 mt-0.5" id="resAgeHours">0.0</div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Reform Breakdown Table -->
+            <div>
+              <div class="text-xs font-bold text-slate-700 mb-2 flex items-center justify-between">
+                <span data-i18n="reformBreakdown">פירוט לפי רפורמה</span>
+                <span class="text-[11px] text-slate-500">מבוסס יחסיות שעות משה"ח</span>
+              </div>
+              <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                <table class="w-full text-xs text-start border-collapse">
+                  <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                    <tr>
+                      <th class="p-3 text-start" data-i18n="tableReformCol">רפורמה</th>
+                      <th class="p-3 text-center" data-i18n="tableBaseFrontalCol">בסיס</th>
+                      <th class="p-3 text-center" data-i18n="tableActualFrontalCol">פרונטלי</th>
+                      <th class="p-3 text-center" data-i18n="tableIndividualCol">פרטני</th>
+                      <th class="p-3 text-center" data-i18n="tableStayingCol">שהייה</th>
+                      <th class="p-3 text-center" data-i18n="tablePercentageCol">% משרה</th>
+                      <th class="p-3 text-center" data-i18n="tableTotalHoursCol">סה"כ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="resBreakdownTableBody">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: SCHOOL TEACHERS ROSTER (טבלת מורים)-->
+    <!-- ========================================== -->
+    <section id="tabSection-roster" class="tab-content hidden space-y-6">
+      
+      <!-- Summary Statistics Bar -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        
+        <div class="glass-panel p-4 flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-xl font-bold">
+            👥
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 font-semibold" data-i18n="totalTeachersCount">מספר מורים</div>
+            <div id="statTotalTeachers" class="text-2xl font-black text-slate-900">0</div>
+          </div>
+        </div>
+
+        <div class="glass-panel p-4 flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl font-bold">
+            📈
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 font-semibold" data-i18n="averageJobPct">ממוצע אחוז משרה</div>
+            <div id="statAvgPct" class="text-2xl font-black text-emerald-600">0.0%</div>
+          </div>
+        </div>
+
+        <div class="glass-panel p-4 flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-xl font-bold">
+            📚
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 font-semibold" data-i18n="totalSchoolFrontal">סה"כ שעות פרונטליות</div>
+            <div id="statTotalFrontal" class="text-2xl font-black text-indigo-700">0.0</div>
+          </div>
+        </div>
+
+        <div class="glass-panel p-4 flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl font-bold">
+            ⏰
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 font-semibold" data-i18n="totalSchoolOvertime">סה"כ שעות נוספות</div>
+            <div id="statTotalOvertime" class="text-2xl font-black text-amber-600">0.0</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Toolbar & Filters -->
+      <div class="glass-panel p-4 flex flex-wrap items-center justify-between gap-3">
+        
+        <!-- Search & Filter Controls -->
+        <div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+          <!-- Search box -->
+          <div class="relative flex-1 min-w-[180px]">
+            <input type="text" id="rosterSearchInput" class="form-input py-2 text-xs" data-i18n-placeholder="searchPlaceholder" placeholder="חיפוש מורה לפי שם...">
+          </div>
+
+          <!-- Reform filter -->
+          <select id="filterReformSelect" class="form-input py-2 text-xs w-auto">
+            <option value="all" data-i18n="filterAll">כל הרפורמות</option>
+            <option value="oz" data-i18n="filterOz">עוז לתמורה בלבד</option>
+            <option value="ofek" data-i18n="filterOfek">אופק חדש בלבד</option>
+            <option value="combined" data-i18n="filterCombined">משרה משולבת</option>
+          </select>
+
+          <!-- Status filter -->
+          <select id="filterStatusSelect" class="form-input py-2 text-xs w-auto">
+            <option value="all" data-i18n="filterAllStatus">כל הסטטוסים</option>
+            <option value="overtime" data-i18n="filterOvertimeOnly">רק עם שעות נוספות (>100%)</option>
+          </select>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="flex items-center gap-2">
+          <button id="loadDemoBtn" class="px-3.5 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all flex items-center gap-1.5">
+            <span>✨</span>
+            <span data-i18n="loadDemoData">טען נתוני הדגמה</span>
+          </button>
+
+          <button id="clearRosterBtn" class="px-3.5 py-2 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-all" data-i18n="clearRoster">
+            מחק הכל
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Roster Table Container -->
+      <div class="glass-panel overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-start border-collapse">
+            <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+              <tr>
+                <th class="p-3.5 text-start" data-i18n="colName">שם המורה</th>
+                <th class="p-3.5 text-center" data-i18n="colAge">גיל</th>
+                <th class="p-3.5 text-start" data-i18n="colReform">רפורמה</th>
+                <th class="p-3.5 text-center" data-i18n="colPct">% משרה</th>
+                <th class="p-3.5 text-center" data-i18n="colFrontal">פרונטלי</th>
+                <th class="p-3.5 text-center" data-i18n="colIndividual">פרטני</th>
+                <th class="p-3.5 text-center" data-i18n="colStaying">שהייה</th>
+                <th class="p-3.5 text-center" data-i18n="colWeeklyTotal">סה"כ שבועיות</th>
+                <th class="p-3.5 text-center" data-i18n="colOvertime">שעות נוספות</th>
+                <th class="p-3.5 text-center" data-i18n="colAgeHours">שעות גיל</th>
+                <th class="p-3.5 text-center" data-i18n="colActions">פעולות</th>
+              </tr>
+            </thead>
+            <tbody id="rosterTableBody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty State Prompt -->
+        <div id="rosterEmptyState" class="p-12 text-center text-slate-500">
+          <div class="text-4xl mb-3">📭</div>
+          <p class="text-sm font-semibold mb-3" data-i18n="noTeachersYet">
+            טרם נוספו מורים. השתמש במחשבון כדי להוסיף מורה או לחץ על "טען נתוני הדגמה".
+          </p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: REVERSE PLANNER (חישוב הפוך)       -->
+    <!-- ========================================== -->
+    <section id="tabSection-reverse" class="tab-content hidden space-y-6">
+      <div class="max-w-4xl mx-auto glass-panel p-6 shadow-sm">
+        
+        <div class="border-b border-slate-200 pb-4 mb-5">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">🎯</span>
+            <h2 class="text-xl font-black text-slate-900" data-i18n="reverseTitle">מתכנן משרה - חישוב שעות לפי יעד אחוז משרה</h2>
+          </div>
+          <p class="text-xs text-slate-500 mt-1" data-i18n="reverseSubtitle">
+            הזן אחוז משרה רצוי וגיל מורה, וקבל את חלוקת השעות המדויקת הנדרשת
+          </p>
+        </div>
+
+        <!-- Controls Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
+          
+          <!-- Target Percentage -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1" data-i18n="targetPercentage">יעד אחוז משרה (%)</label>
+            <input type="number" id="reverseTargetInput" min="10" max="140" step="5" value="100" class="form-input text-center font-black text-primary text-lg">
+          </div>
+
+          <!-- Teacher Age -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1" data-i18n="teacherAge">גיל המורה</label>
+            <input type="number" id="reverseAgeInput" min="20" max="80" value="45" class="form-input text-center font-bold text-slate-800 text-lg">
+          </div>
+
+          <!-- Reform Type -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1" data-i18n="reformAffiliation">שייכות לרפורמה</label>
+            <select id="reverseReformSelect" class="form-input font-semibold text-xs py-2.5">
+              <option value="combined" data-i18n="reformCombined">משרה משולבת (אופק + עוז)</option>
+              <option value="oz" data-i18n="reformOzOnly">עוז לתמורה בלבד</option>
+              <option value="ofek" data-i18n="reformOfekOnly">אופק חדש בלבד</option>
+            </select>
+          </div>
+
+        </div>
+
+        <!-- Split Ratio (For Combined) -->
+        <div id="reverseSplitContainer" class="mb-6 p-4 rounded-xl bg-purple-50/70 border border-purple-200">
+          <label class="block text-xs font-bold text-purple-900 mb-2" data-i18n="splitRatioLabel">חלוקת משרה במשרה משולבת</label>
+          <select id="reverseSplitSelect" class="form-input text-xs font-semibold">
+            <option value="0.5" data-i18n="split5050">50% אופק חדש / 50% עוז לתמורה</option>
+            <option value="0.6" data-i18n="split6040">60% אופק חדש / 40% עוז לתמורה</option>
+            <option value="0.4" data-i18n="split4060">40% אופק חדש / 60% עוז לתמורה</option>
+            <option value="0.7" data-i18n="split7030">70% אופק חדש / 30% עוז לתמורה</option>
+            <option value="0.3" data-i18n="split3070">30% אופק חדש / 70% עוז לתמורה</option>
+          </select>
+        </div>
+
+        <!-- Dynamic Results Container -->
+        <div id="reversePlannerResults">
+          <!-- Populated dynamically -->
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: MOE REGULATIONS GUIDE (מדריך תקנות)-->
+    <!-- ========================================== -->
+    <section id="tabSection-rulesGuide" class="tab-content hidden space-y-6">
+      <div class="max-w-4xl mx-auto glass-panel p-6 sm:p-8 shadow-sm space-y-6">
+        
+        <div class="border-b border-slate-200 pb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">📖</span>
+            <h2 class="text-xl font-black text-slate-900" data-i18n="guideTitle">מדריך תקנות משרד החינוך וחלוקת שעות</h2>
+          </div>
+          <p class="text-xs text-slate-500 mt-1">
+            סיכום נהלים וחוזרי מנכ"ל לעבודת אחראית מערכת בבית ספר תיכון ושש-שנתי
+          </p>
+        </div>
+
+        <!-- Section 1: Oz LeTmura -->
+        <div class="p-4 rounded-xl bg-indigo-50/50 border border-indigo-200">
+          <h3 class="text-base font-bold text-indigo-950 mb-2 flex items-center gap-2" data-i18n="ozSectionTitle">
+            <span>🏛️</span> 1. עוז לתמורה (חטיבה עליונה - 40 שעות שבועיות)
+          </h3>
+          <p class="text-xs text-slate-700 leading-relaxed mb-3">
+            בסיס משרה מלאה (100%) כולל 40 שעות שבועיות של 60 דקות בבית הספר:
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center text-xs">
+            <div class="bg-white p-3 rounded-lg border border-indigo-200 shadow-sm">
+              <span class="font-bold text-indigo-700 text-lg block">24 שעות</span>
+              הוראה פרונטלית (שיעור = 45 דק')
+            </div>
+            <div class="bg-white p-3 rounded-lg border border-indigo-200 shadow-sm">
+              <span class="font-bold text-purple-700 text-lg block">6 שעות</span>
+              שעות פרטניות (קבוצות 1-5 תלמידים)
+            </div>
+            <div class="bg-white p-3 rounded-lg border border-indigo-200 shadow-sm">
+              <span class="font-bold text-amber-700 text-lg block">10 שעות</span>
+              שעות שהייה (ישיבות, קשר הורים, הכנות)
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Ofek Hadash -->
+        <div class="p-4 rounded-xl bg-blue-50/50 border border-blue-200">
+          <h3 class="text-base font-bold text-blue-950 mb-2 flex items-center gap-2" data-i18n="ofekSectionTitle">
+            <span>🌱</span> 2. אופק חדש (חטיבת ביניים - 36 שעות שבועיות)
+          </h3>
+          <p class="text-xs text-slate-700 leading-relaxed mb-3">
+            בסיס משרה מלאה (100%) בחטיבת ביניים כולל 36 שעות שבועיות:
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center text-xs">
+            <div class="bg-white p-3 rounded-lg border border-blue-200 shadow-sm">
+              <span class="font-bold text-blue-700 text-lg block">21 שעות</span>
+              הוראה פרונטלית
+            </div>
+            <div class="bg-white p-3 rounded-lg border border-blue-200 shadow-sm">
+              <span class="font-bold text-purple-700 text-lg block">4 שעות</span>
+              שעות פרטניות
+            </div>
+            <div class="bg-white p-3 rounded-lg border border-blue-200 shadow-sm">
+              <span class="font-bold text-amber-700 text-lg block">11 שעות</span>
+              שעות שהייה
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Age Reductions -->
+        <div class="p-4 rounded-xl bg-emerald-50/50 border border-emerald-200">
+          <h3 class="text-base font-bold text-emerald-950 mb-2 flex items-center gap-2" data-i18n="ageReductionTitle">
+            <span>🎂</span> 3. טבלת שעות גיל לפי משרד החינוך
+          </h3>
+          <p class="text-xs text-slate-700 leading-relaxed mb-3">
+            הפחתת שעות גיל אינה מקטינה את היקף המשרה! השעות הפרונטליות מומרות לשעות שהייה:
+          </p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-center border-collapse bg-white rounded-lg overflow-hidden border border-emerald-200">
+              <thead class="bg-emerald-100 text-emerald-900 font-bold">
+                <tr>
+                  <th class="p-2.5">מדרגת גיל</th>
+                  <th class="p-2.5">עוז לתמורה (פרונטלי)</th>
+                  <th class="p-2.5">עוז לתמורה (שהייה)</th>
+                  <th class="p-2.5">אופק חדש חט"ב (פרונטלי)</th>
+                  <th class="p-2.5">אופק חדש חט"ב (שהייה)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-emerald-100">
+                <tr>
+                  <td class="p-2 font-bold">מתחת לגיל 50</td>
+                  <td class="p-2">24 שעות</td>
+                  <td class="p-2">10 שעות</td>
+                  <td class="p-2">21 שעות</td>
+                  <td class="p-2">11 שעות</td>
+                </tr>
+                <tr>
+                  <td class="p-2 font-bold text-emerald-700">גיל 50 - 54</td>
+                  <td class="p-2 font-bold">22 שעות (-2)</td>
+                  <td class="p-2">12 שעות (+2)</td>
+                  <td class="p-2 font-bold">19 שעות (-2)</td>
+                  <td class="p-2">13 שעות (+2)</td>
+                </tr>
+                <tr>
+                  <td class="p-2 font-bold text-emerald-700">גיל 55 - 56</td>
+                  <td class="p-2 font-bold">21 שעות (-3)</td>
+                  <td class="p-2">13 שעות (+3)</td>
+                  <td class="p-2 font-bold">18 שעות (-3)</td>
+                  <td class="p-2">14 שעות (+3)</td>
+                </tr>
+                <tr>
+                  <td class="p-2 font-bold text-emerald-700">גיל 57 ומעלה</td>
+                  <td class="p-2 font-bold">20 שעות (-4)</td>
+                  <td class="p-2">14 שעות (+4)</td>
+                  <td class="p-2 font-bold">18 שעות (-3)</td>
+                  <td class="p-2">14 שעות (+3)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 4: Combined Reform & Overtime -->
+        <div class="p-4 rounded-xl bg-purple-50/50 border border-purple-200">
+          <h3 class="text-base font-bold text-purple-950 mb-2 flex items-center gap-2" data-i18n="combinedRulesTitle">
+            <span>⚖️</span> 4. כללי משרה משולבת והעסקה בשעות נוספות
+          </h3>
+          <ul class="text-xs text-slate-700 space-y-2 list-disc list-inside leading-relaxed">
+            <li><strong>שקלול משרה:</strong> אחוז המשרה הכולל שווה לסכום אחוזי המשרה בכל רפורמה (יחסית לבסיס הפרונטלי לגיל המורה).</li>
+            <li><strong>שעות ליווי:</strong> שעות פרטני ושהייה נגזרות ביחס ישר לאחוז המשרה שנצבר בכל רפורמה בנפרד.</li>
+            <li><strong>העסקה מעל 100%:</strong> העסקה בין 100% ל-125% משרה נחשבת שעות נוספות מאושרות ומחייבת אישור מפקח מחוז.</li>
+            <li><strong>חריגה מעל 125%:</strong> היקף משרה מעל 125% דורש אישור חריג ומיוחד של משרד החינוך (מקסימום 140%).</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="no-print bg-white border-t border-slate-200 py-4 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+      <div class="flex items-center gap-2">
+        <img src="school-logo.png" alt="קמפוס עירוני רבין" class="h-6 w-auto object-contain">
+        <span class="font-bold text-slate-700" data-i18n="schoolName">קמפוס עירוני רבין</span>
+        <span>•</span>
+        <span class="text-purple-700 font-medium" data-i18n="schoolMotto">מצויינות שמובילה לאקדמיה</span>
+      </div>
+      <div>
+        מערכית | פותח עבור אחראית מערכת והנהלת בית הספר | מבוסס על הסכמי העבודה וחוזרי מנכ"ל משרד החינוך
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="moe_rules.js"></script>
+  <script src="translations.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -8,7 +8,7 @@ const TRANSLATIONS = {
     schoolName: 'קמפוס עירוני רבין',
     schoolMotto: 'מצויינות שמובילה לאקדמיה',
     appTitle: 'מערכית | מחשבון משרות ושעות מורים',
-    appSubtitle: 'מערכת חישוב אחוזי משרה, שעות פרונטליות, פרטניות ושעות נוספות לפי נהלי משרד החינוך',
+    appSubtitle: 'מערכת חישוב אחוזי משרה, שעות פרונטליות, פרטניות, שהייה ושעות נוספות לפי נהלי משרד החינוך',
     highSchoolBadge: 'מותאם לתיכון ולשש-שנתי',
     updatedMoeBadge: 'מעודכן לתקנות משרד החינוך',
     settings: 'הגדרות שפה',
@@ -36,9 +36,13 @@ const TRANSLATIONS = {
     reformOfekOnly: 'אופק חדש בלבד (חטיבת ביניים ז\'-ט\')',
     reformCombined: 'משרה משולבת (אופק חדש + עוז לתמורה)',
     
+    ozAgreementLabel: 'מסלול הסכם עוז לתמורה',
+    ozAgreementUpdated: 'הסכם מעודכן תשפ"ה (38 ש"ש - 25 פרונטלי, 3 פרטני, 10 שהייה)',
+    ozAgreementClassic: 'הסכם קלאסי (40 ש"ש - 24 פרונטלי, 6 פרטני, 10 שהייה)',
+    
     ofekSubtype: 'שלב חינוך באופק חדש',
-    ofekJuniorHigh: 'חטיבת ביניים (חט"ב - בסיס 21 שעות)',
-    ofekPrimary: 'יסודי (בסיס 26 שעות)',
+    ofekJuniorHigh: 'חטיבת ביניים (חט"ב - בסיס 23 שעות פרונטליות)',
+    ofekPrimary: 'יסודי (בסיס 26 שעות פרונטליות)',
     
     frontalHoursOfek: 'שעות הוראה פרונטליות באופק חדש',
     frontalHoursOz: 'שעות הוראה פרונטליות בעוז לתמורה',
@@ -52,9 +56,12 @@ const TRANSLATIONS = {
     countRolesInPercentageLabel: 'שקלל שעות תפקיד באחוז המשרה (% משרה)',
     
     isMother: 'זכאות למשרת אם (אם לילד עד גיל 14)',
-    motherTooltip: 'לפי תקנות משה"ח, מורה אם שעובדת מעל 79% זכאית לתוספת/הקלה',
+    motherTooltip: 'לפי תקנות משה"ח, מורה אם שעובדת מעל 79% זכאית לקיצור שהייה או לתוספת שכר',
     motherHoursBadge: 'הטבת משרת אם פעילה',
-    motherHoursReducedText: 'הפחתת 2 שעות שהייה שבועיות',
+    motherHoursReducedText: 'הפחתת 2 שעות שהייה שבועיות בביה"ס',
+    motherOptionLabel: 'אופן מימוש הטבת משרת אם:',
+    motherOptionReduction: 'קיצור שעות נוכחות/שהייה (הפחתת 2 ש"ש שהייה במערכת)',
+    motherOptionSalary: 'תוספת 7% לשכר (עבודה רגילה ללא קיצור שעות)',
 
     // כפתורים
     calculate: 'חשב משרה',
@@ -72,9 +79,12 @@ const TRANSLATIONS = {
     frontalHoursCard: 'שעות הוראה (פרונטליות)',
     roleHoursCard: 'שעות תפקיד וגמול',
     individualHoursCard: 'שעות פרטניות',
-    stayingHoursCard: 'שעות שהייה',
+    stayingHoursCard: 'שעות שהייה בפועל',
     overtimeHoursCard: 'שעות נוספות / חריגה מעל 100%',
     ageReductionCard: 'הפחתת שעות גיל',
+    scheduledStayingRecommendation: 'המלצת שיבוץ במערכת השעות',
+    stayingFormulaTitle: 'נוסחת שעות שהייה מדויקת',
+    nominalStayingLabel: 'שהייה תקנית לפני הפחתות',
     
     // סטטוס משרה
     statusPartTime: 'משרה חלקית',
@@ -90,7 +100,7 @@ const TRANSLATIONS = {
     hoursInOz: 'שעות בעוז',
     
     // פירוט רפורמות
-    reformBreakdown: 'פירוט לפי רפורמה',
+    reformBreakdown: 'פירוט מדויק לפי רפורמה',
     tableReformCol: 'רפורמה',
     tableBaseFrontalCol: 'בסיס פרונטלי לגיל',
     tableActualFrontalCol: 'פרונטלי בפועל',
@@ -148,8 +158,8 @@ const TRANSLATIONS = {
 
     // מדריך משרד החינוך
     guideTitle: 'מדריך תקנות משרד החינוך וחלוקת שעות',
-    ozSectionTitle: '1. עוז לתמורה (חטיבה עליונה - 40 שעות שבועיות)',
-    ofekSectionTitle: '2. אופק חדש (חטיבת ביניים - 36 שעות שבועיות)',
+    ozSectionTitle: '1. עוז לתמורה (חטיבה עליונה י\'-י"ב)',
+    ofekSectionTitle: '2. אופק חדש (חטיבת ביניים ז\'-ט\')',
     ageReductionTitle: '3. טבלת שעות גיל לפי משרד החינוך',
     combinedRulesTitle: '4. כללי משרה משולבת (שש-שנתי)',
     overtimeRulesTitle: '5. שעות נוספות והגבלות משרד החינוך',
@@ -196,8 +206,12 @@ const TRANSLATIONS = {
     reformOfekOnly: 'Ofek Hadash Only (Junior High 7-9)',
     reformCombined: 'Combined Reform (Ofek Hadash + Oz LeTmura)',
 
+    ozAgreementLabel: 'Oz LeTmura Agreement Model',
+    ozAgreementUpdated: 'Updated 2024 Agreement (38h - 25 frontal, 3 indiv, 10 stay)',
+    ozAgreementClassic: 'Classic Agreement (40h - 24 frontal, 6 indiv, 10 stay)',
+
     ofekSubtype: 'Ofek Hadash Level',
-    ofekJuniorHigh: 'Junior High (7-9, 21h frontal base)',
+    ofekJuniorHigh: 'Junior High (7-9, 23h frontal base)',
     ofekPrimary: 'Primary (26h frontal base)',
 
     frontalHoursOfek: 'Ofek Hadash Frontal Hours',
@@ -215,6 +229,9 @@ const TRANSLATIONS = {
     motherTooltip: 'Eligible for workload adjustments for >=79% job percentage',
     motherHoursBadge: 'Active Motherhood Benefit',
     motherHoursReducedText: '2 weekly staying hours reduced',
+    motherOptionLabel: 'Motherhood benefit mode:',
+    motherOptionReduction: 'Presence reduction (reduce 2 weekly staying hours)',
+    motherOptionSalary: '7% Salary bonus (no schedule reduction)',
 
     calculate: 'Calculate Workload',
     resetForm: 'Reset Fields',
@@ -230,9 +247,12 @@ const TRANSLATIONS = {
     frontalHoursCard: 'Frontal Teaching Hours',
     roleHoursCard: 'Role & Coord Hours',
     individualHoursCard: 'Individual Hours',
-    stayingHoursCard: 'Staying Hours',
+    stayingHoursCard: 'Actual Staying Hours',
     overtimeHoursCard: 'Overtime / Excess Hours (>100%)',
     ageReductionCard: 'Age Hours Awarded',
+    scheduledStayingRecommendation: 'Timetable Scheduling Recommendation',
+    stayingFormulaTitle: 'Precise Staying Hours Formula',
+    nominalStayingLabel: 'Nominal Staying Hours',
 
     statusPartTime: 'Part-Time Workload',
     statusFullTime: 'Standard Full-Time (100%)',
@@ -300,8 +320,8 @@ const TRANSLATIONS = {
     reverseResultTitle: 'Required Hours for Target:',
 
     guideTitle: 'Ministry of Education Regulations & Hour Breakdown',
-    ozSectionTitle: '1. Oz LeTmura (High School - 40 Weekly Hours)',
-    ofekSectionTitle: '2. Ofek Hadash (Junior High - 36 Weekly Hours)',
+    ozSectionTitle: '1. Oz LeTmura (High School - 10-12)',
+    ofekSectionTitle: '2. Ofek Hadash (Junior High - 7-9)',
     ageReductionTitle: '3. Age Hours Reduction Table',
     combinedRulesTitle: '4. Combined Reform Principles (6-Year Schools)',
     overtimeRulesTitle: '5. Overtime Hours & Ministry Limits',
@@ -346,9 +366,13 @@ const TRANSLATIONS = {
     reformOfekOnly: 'Только Офек Хадаш (Средние классы 7-9)',
     reformCombined: 'Совмещенная ставка (Офек Хадаш + Оз ле-Тмура)',
 
+    ozAgreementLabel: 'Модель соглашения Оз ле-Тмура',
+    ozAgreementUpdated: 'Обновленное соглашение (38 ч. - 25 фронт., 3 индив., 10 преб.)',
+    ozAgreementClassic: 'Классическое соглашение (40 ч. - 24 фронт., 6 индив., 10 преб.)',
+
     ofekSubtype: 'Ступень обучения в Офек Хадаш',
-    ofekJuniorHigh: 'Средняя школа (7-9 кл., база 21 час)',
-    ofekPrimary: 'Начальная школа (база 26 часов)',
+    ofekJuniorHigh: 'Средняя школа (7-9 кл., база 23 фронт. часа)',
+    ofekPrimary: 'Начальная школа (база 26 фронт. часов)',
 
     frontalHoursOfek: 'Фронтальные часы в Офек Хадаш',
     frontalHoursOz: 'Фронтальные часы в Оз ле-Тмура',
@@ -365,6 +389,9 @@ const TRANSLATIONS = {
     motherTooltip: 'Право на льготу при ставке 79% и выше',
     motherHoursBadge: 'Льгота матери активна',
     motherHoursReducedText: 'Сокращение на 2 часа пребывания',
+    motherOptionLabel: 'Способ реализации льготы матери:',
+    motherOptionReduction: 'Сокращение часов (минус 2 часа пребывания в расписании)',
+    motherOptionSalary: 'Надбавка 7% к зарплате (обычные часы)',
 
     calculate: 'Рассчитать ставку',
     resetForm: 'Сбросить поля',
@@ -380,9 +407,12 @@ const TRANSLATIONS = {
     frontalHoursCard: 'Фронтальные часы (преподавание)',
     roleHoursCard: 'Часы должности/координации',
     individualHoursCard: 'Индивидуальные часы',
-    stayingHoursCard: 'Часы пребывания (шехия)',
+    stayingHoursCard: 'Фактические часы пребывания',
     overtimeHoursCard: 'Сверхурочные / Сверх 100%',
     ageReductionCard: 'Возрастная льгота (часы)',
+    scheduledStayingRecommendation: 'Рекомендация для составления расписания',
+    stayingFormulaTitle: 'Точная формула расчета часов пребывания',
+    nominalStayingLabel: 'Нормативные часы пребывания',
 
     statusPartTime: 'Неполная ставка',
     statusFullTime: 'Полная ставка (100%)',
@@ -450,8 +480,8 @@ const TRANSLATIONS = {
     reverseResultTitle: 'Необходимые часы для достижения цели:',
 
     guideTitle: 'Справочник норм Министерства просвещения',
-    ozSectionTitle: '1. Оз ле-Тмура (Старшая школа - 40 недельных часов)',
-    ofekSectionTitle: '2. Офек Хадаш (Средняя школа - 36 недельных часов)',
+    ozSectionTitle: '1. Оз ле-Тмура (Старшая школа - 10-12)',
+    ofekSectionTitle: '2. Офек Хадаш (Средняя школа - 7-9)',
     ageReductionTitle: '3. Таблица возрастных часов',
     combinedRulesTitle: '4. Правила совмещенной ставки (6-летние школы)',
     overtimeRulesTitle: '5. Сверхурочные часы и ограничения',

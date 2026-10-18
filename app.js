@@ -13,13 +13,16 @@ const state = {
     age: 42,
     reform: 'combined', // 'oz', 'ofek', 'combined'
     ofekType: 'junior_high', // 'junior_high', 'primary'
+    ozAgreement: 'updated38', // 'updated38', 'classic40'
     frontalOz: 12,
     frontalOfek: 10,
     isMother: false,
+    motherOption: 'reduction', // 'reduction' (קיצור שהייה) or 'salary' (תוספת 7% לשכר)
     roleEducator: false,
     roleGradeCoord: false,
     roleSubjectCoord: false,
-    otherRoleHours: 0
+    otherRoleHours: 0,
+    countRolesInPercentage: true
   },
   editingId: null,
   roster: [],
@@ -31,6 +34,7 @@ const state = {
   reverseTargetPct: 100,
   reverseAge: 45,
   reverseReform: 'combined',
+  reverseOzAgreement: 'updated38',
   reverseSplitRatio: 0.5
 };
 
@@ -138,7 +142,36 @@ function bindEvents() {
   bindInput('frontalOzInput', 'frontalOz', true);
   bindInput('frontalOfekInput', 'frontalOfek', true);
   bindInput('otherRoleHoursInput', 'otherRoleHours', true);
-  bindInput('isMotherInput', 'isMother', false, true);
+
+  // Motherhood Checkbox & Option Select
+  const isMotherEl = document.getElementById('isMotherInput');
+  if (isMotherEl) {
+    isMotherEl.addEventListener('change', (e) => {
+      state.currentTeacher.isMother = e.target.checked;
+      const optWrap = document.getElementById('motherOptionWrapper');
+      if (optWrap) optWrap.classList.toggle('hidden', !e.target.checked);
+      renderCurrentCalculation();
+    });
+  }
+
+  const motherOptEl = document.getElementById('motherOptionSelect');
+  if (motherOptEl) {
+    motherOptEl.addEventListener('change', (e) => {
+      state.currentTeacher.motherOption = e.target.value;
+      renderCurrentCalculation();
+    });
+  }
+
+  // Oz Agreement Select
+  const ozAgreementEl = document.getElementById('ozAgreementSelect');
+  if (ozAgreementEl) {
+    ozAgreementEl.addEventListener('change', (e) => {
+      state.currentTeacher.ozAgreement = e.target.value;
+      renderCurrentCalculation();
+      updateAgeReductionHint();
+    });
+  }
+
   bindInput('roleEducatorInput', 'roleEducator', false, true);
   bindInput('roleGradeCoordInput', 'roleGradeCoord', false, true);
   bindInput('roleSubjectCoordInput', 'roleSubjectCoord', false, true);
@@ -280,17 +313,21 @@ function setReform(reform) {
 
   const ofekContainer = document.getElementById('ofekHoursContainer');
   const ozContainer = document.getElementById('ozHoursContainer');
+  const ozAgreementContainer = document.getElementById('ozAgreementContainer');
 
   if (reform === 'oz') {
     if (ofekContainer) ofekContainer.classList.add('hidden');
     if (ozContainer) ozContainer.classList.remove('hidden');
+    if (ozAgreementContainer) ozAgreementContainer.classList.remove('hidden');
   } else if (reform === 'ofek') {
     if (ofekContainer) ofekContainer.classList.remove('hidden');
     if (ozContainer) ozContainer.classList.add('hidden');
+    if (ozAgreementContainer) ozAgreementContainer.classList.add('hidden');
   } else {
     // combined
     if (ofekContainer) ofekContainer.classList.remove('hidden');
     if (ozContainer) ozContainer.classList.remove('hidden');
+    if (ozAgreementContainer) ozAgreementContainer.classList.remove('hidden');
   }
 
   renderCurrentCalculation();
@@ -312,17 +349,18 @@ function updateAgeReductionHint() {
   const hintEl = document.getElementById('ageHoursHintBadge');
   if (!hintEl) return;
 
-  const ozRule = MOE_RULES.OZ_LE_TMURA.getStructureByAge(age);
+  const ozRule = MOE_RULES.OZ_LE_TMURA.getStructureByAge(age, state.currentTeacher.ozAgreement);
   const ofekRule = MOE_RULES.OFEK_HADASH_JUNIOR_HIGH.getStructureByAge(age);
 
   if (ozRule.ageReduction > 0 || ofekRule.ageReduction > 0) {
     let text = '';
+    const reductionAmount = Math.max(ozRule.ageReduction, ofekRule.ageReduction);
     if (state.currentLang === 'he') {
-      text = `🎉 זכאות לשעות גיל: הפחתה של ${Math.max(ozRule.ageReduction, ofekRule.ageReduction)} שעות פרונטליות שהומרו לשעות שהייה (מדרגת גיל ${ozRule.ageBracket}).`;
+      text = `🎉 זכאות לשעות גיל (מדרגת ${ozRule.ageBracket}): הפחתה של ${reductionAmount} שעות הוראה פרונטליות מהבסיס הנדרש, תוך שמירה מלאה על 100% שכר ומשרה!`;
     } else if (state.currentLang === 'ru') {
-      text = `🎉 Возрастная льгота: сокращение на ${Math.max(ozRule.ageReduction, ofekRule.ageReduction)} фронтальных часа в пользу часов пребывания (возрастная категория ${ozRule.ageBracket}).`;
+      text = `🎉 Возрастная льгота (категория ${ozRule.ageBracket}): сокращение на ${reductionAmount} фронтальных часа от требуемой базы при 100% сохранении ставки и зарплаты!`;
     } else {
-      text = `🎉 Age entitlement: reduction of ${Math.max(ozRule.ageReduction, ofekRule.ageReduction)} frontal hours transferred to staying hours (age bracket ${ozRule.ageBracket}).`;
+      text = `🎉 Age entitlement (${ozRule.ageBracket}): reduction of ${reductionAmount} frontal hours from required base with 100% full pay and workload preserved!`;
     }
     hintEl.innerHTML = text;
     hintEl.classList.remove('hidden');
@@ -339,9 +377,12 @@ function renderCurrentCalculation() {
   const calc = MOE_RULES.calculateWorkload({
     age: tObj.age,
     reform: tObj.reform,
+    ofekType: tObj.ofekType || 'junior_high',
+    ozAgreement: tObj.ozAgreement || 'updated38',
     frontalOz: (tObj.reform === 'ofek') ? 0 : tObj.frontalOz,
     frontalOfek: (tObj.reform === 'oz') ? 0 : tObj.frontalOfek,
     isMother: tObj.isMother,
+    motherOption: tObj.motherOption || 'reduction',
     roleEducator: tObj.roleEducator,
     roleGradeCoord: tObj.roleGradeCoord,
     roleSubjectCoord: tObj.roleSubjectCoord,
@@ -351,6 +392,17 @@ function renderCurrentCalculation() {
 
   // Store calculated in state for save
   state.currentCalculated = calc;
+
+  // Update Dynamic Base Hints on Form Inputs
+  const ofekBaseHint = document.getElementById('ofekBaseHint');
+  if (ofekBaseHint) {
+    ofekBaseHint.innerText = `בסיס משרה: ${calc.ofek.baseFrontal} ש"ש (מתוך 36)`;
+  }
+  const ozBaseHint = document.getElementById('ozBaseHint');
+  if (ozBaseHint) {
+    const totalWeek = (tObj.ozAgreement === 'classic40') ? 40 : 38;
+    ozBaseHint.innerText = `בסיס משרה: ${calc.oz.baseFrontal} ש"ש (מתוך ${totalWeek})`;
+  }
 
   // Percentage Display
   const pctEl = document.getElementById('resJobPercentage');
@@ -409,6 +461,39 @@ function renderCurrentCalculation() {
   setCardValue('resOvertimeHours', calc.total.overtimeFrontalHours);
   setCardValue('resAgeHours', calc.total.ageHoursAwarded);
 
+  // Update Rounded Scheduling Hint on Staying Card
+  const stayingRoundedEl = document.getElementById('resStayingRoundedVal');
+  if (stayingRoundedEl) {
+    stayingRoundedEl.innerText = `${calc.total.scheduledStayingHoursRounded.toFixed(1)} ש"ש`;
+  }
+
+  // Detailed Staying Hours Formula Box
+  const formulaBox = document.getElementById('stayingFormulaBox');
+  const formulaBadge = document.getElementById('stayingNominalBadge');
+  const formulaContent = document.getElementById('stayingFormulaContent');
+  if (formulaBox && formulaContent) {
+    if (formulaBadge) {
+      formulaBadge.innerText = `תקני: ${calc.total.nominalStayingHours.toFixed(2)} ש"ש`;
+    }
+    let fHtml = '';
+    if (calc.ofek.active) {
+      fHtml += `<div>• <strong>אופק חדש (חט"ב):</strong> ${calc.ofek.stayingFormula} שעות שהייה (מתוך תקן בסיס של 9 ש"ש שהייה ל-23 פרונטלי)</div>`;
+    }
+    if (calc.oz.active) {
+      fHtml += `<div>• <strong>עוז לתמורה:</strong> ${calc.oz.stayingFormula} שעות שהייה (מתוך תקן בסיס של 10 ש"ש שהייה ל-${calc.oz.baseFrontal} פרונטלי)</div>`;
+    }
+    if (calc.ofek.active && calc.oz.active) {
+      fHtml += `<div class="font-bold text-slate-900 pt-1 border-t border-slate-200">• סה"כ שהייה משוקללת תקנית: ${calc.ofek.staying.toFixed(2)} + ${calc.oz.staying.toFixed(2)} = ${calc.total.nominalStayingHours.toFixed(2)} ש"ש</div>`;
+    }
+    if (calc.total.motherReductionHours > 0) {
+      fHtml += `<div class="text-pink-700 font-bold">• הטבת משרת אם: הופחתו ${calc.total.motherReductionHours.toFixed(2)} ש"ש שהייה ➔ שהייה בפועל בביה"ס: ${calc.total.stayingHours.toFixed(2)} ש"ש</div>`;
+    } else if (calc.total.motherSalaryBonus > 0) {
+      fHtml += `<div class="text-emerald-700 font-bold">• הטבת משרת אם: נבחרה תוספת 7% לשכר בתלוש (ללא קיצור שעות במערכת)</div>`;
+    }
+    fHtml += `<div class="text-indigo-950 font-bold pt-1.5 border-t border-slate-200 flex items-center justify-between"><span>• המלצת שיבוץ במערכת השעות (במעוגל לחצי שעה):</span> <span class="bg-indigo-100 text-indigo-900 px-2 py-0.5 rounded font-black">${calc.total.scheduledStayingHoursRounded.toFixed(1)} ש"ש</span></div>`;
+    formulaContent.innerHTML = fHtml;
+  }
+
   // Update Role Hours Pill in Input Area
   const rolePill = document.getElementById('roleHoursTotalPill');
   if (rolePill) {
@@ -424,8 +509,13 @@ function renderCurrentCalculation() {
     if (tObj.isMother) {
       motherBadge.classList.remove('hidden');
       if (calc.total.motherHourEligible) {
-        motherBadge.className = 'mt-2 p-2 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1.5';
-        motherBadge.innerHTML = `<span>👩‍👧</span> <span><strong>זכאות פעילה:</strong> קיצור 2 שעות שהייה שבועיות בביה"ס (שבוע מקוצר של ${calc.total.totalWeeklyHours.toFixed(1)} ש"ש ללא פגיעה בשכר ובמשרה).</span>`;
+        if (calc.total.motherHourStatus === 'active_reduction') {
+          motherBadge.className = 'mt-2 p-2 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1.5';
+          motherBadge.innerHTML = `<span>👩‍👧</span> <span><strong>זכאות פעילה למשרת אם:</strong> קיצור 2 שעות שהייה שבועיות בביה"ס (שבוע של ${calc.total.totalWeeklyHours.toFixed(1)} ש"ש ללא פגיעה בשכר ובמשרה).</span>`;
+        } else {
+          motherBadge.className = 'mt-2 p-2 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1.5';
+          motherBadge.innerHTML = `<span>👩‍👧</span> <span><strong>זכאות פעילה למשרת אם:</strong> תוספת 7% לשכר המשרה בתלוש השכר (ללא קיצור שעות במערכת).</span>`;
+        }
       } else {
         motherBadge.className = 'mt-2 p-2 rounded-lg text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-200 flex items-center gap-1.5';
         motherBadge.innerHTML = `<span>⚠️</span> <span><strong>שימי לב:</strong> משרת אם מוענקת לפי משה"ח רק מ-79% משרה ומעלה (כרגע המשרה היא ${calc.total.jobPercentage.toFixed(1)}%).</span>`;
@@ -440,12 +530,21 @@ function renderCurrentCalculation() {
   if (noticeBox) {
     let motherHtml = '';
     if (calc.total.motherHourEligible) {
-      motherHtml = `
-        <div class="p-2.5 rounded-lg bg-pink-50 border border-pink-200 text-pink-900 text-xs font-bold flex items-center justify-between">
-          <span class="flex items-center gap-1.5"><span>👩‍👧</span> <span>הטבת משרת אם פעילה: הופחתו 2 שעות שהייה שבועיות</span></span>
-          <span class="bg-pink-100 text-pink-800 px-2 py-0.5 rounded text-[11px] font-black">-2 ש"ש שהייה</span>
-        </div>
-      `;
+      if (calc.total.motherHourStatus === 'active_reduction') {
+        motherHtml = `
+          <div class="p-2.5 rounded-lg bg-pink-50 border border-pink-200 text-pink-900 text-xs font-bold flex items-center justify-between">
+            <span class="flex items-center gap-1.5"><span>👩‍👧</span> <span>הטבת משרת אם פעילה: קיצור 2 שעות שהייה שבועיות</span></span>
+            <span class="bg-pink-100 text-pink-800 px-2 py-0.5 rounded text-[11px] font-black">-2 ש"ש שהייה</span>
+          </div>
+        `;
+      } else {
+        motherHtml = `
+          <div class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center justify-between">
+            <span class="flex items-center gap-1.5"><span>👩‍👧</span> <span>הטבת משרת אם פעילה: תוספת 7% לשכר המשרה</span></span>
+            <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[11px] font-black">+7% שכר</span>
+          </div>
+        `;
+      }
     }
 
     let roleHtml = '';
@@ -503,7 +602,7 @@ function renderReformBreakdownTable(calc) {
         <td class="p-3 text-center">${calc.ofek.baseFrontal} ${t('hours')}</td>
         <td class="p-3 text-center font-bold text-blue-700">${calc.ofek.frontal.toFixed(1)}</td>
         <td class="p-3 text-center">${calc.ofek.individual.toFixed(1)}</td>
-        <td class="p-3 text-center">${calc.ofek.staying.toFixed(1)}</td>
+        <td class="p-3 text-center font-bold text-amber-700">${calc.ofek.staying.toFixed(1)}</td>
         <td class="p-3 text-center font-bold text-slate-900">${calc.ofek.percentage.toFixed(2)}%</td>
         <td class="p-3 text-center font-medium">${calc.ofek.totalHours.toFixed(1)}</td>
       </tr>
@@ -520,7 +619,7 @@ function renderReformBreakdownTable(calc) {
         <td class="p-3 text-center">${calc.oz.baseFrontal} ${t('hours')}</td>
         <td class="p-3 text-center font-bold text-indigo-700">${calc.oz.frontal.toFixed(1)}</td>
         <td class="p-3 text-center">${calc.oz.individual.toFixed(1)}</td>
-        <td class="p-3 text-center">${calc.oz.staying.toFixed(1)}</td>
+        <td class="p-3 text-center font-bold text-amber-700">${calc.oz.staying.toFixed(1)}</td>
         <td class="p-3 text-center font-bold text-slate-900">${calc.oz.percentage.toFixed(2)}%</td>
         <td class="p-3 text-center font-medium">${calc.oz.totalHours.toFixed(1)}</td>
       </tr>
@@ -588,9 +687,11 @@ function resetCurrentTeacher() {
     age: 42,
     reform: 'combined',
     ofekType: 'junior_high',
+    ozAgreement: 'updated38',
     frontalOz: 12,
     frontalOfek: 10,
     isMother: false,
+    motherOption: 'reduction',
     roleEducator: false,
     roleGradeCoord: false,
     roleSubjectCoord: false,
@@ -606,6 +707,15 @@ function resetCurrentTeacher() {
   document.getElementById('frontalOfekInput').value = 10;
   document.getElementById('otherRoleHoursInput').value = 0;
   document.getElementById('isMotherInput').checked = false;
+  
+  const motherOptWrap = document.getElementById('motherOptionWrapper');
+  if (motherOptWrap) motherOptWrap.classList.add('hidden');
+  const motherOptSel = document.getElementById('motherOptionSelect');
+  if (motherOptSel) motherOptSel.value = 'reduction';
+
+  const ozAgreementEl = document.getElementById('ozAgreementSelect');
+  if (ozAgreementEl) ozAgreementEl.value = 'updated38';
+
   document.getElementById('roleEducatorInput').checked = false;
   document.getElementById('roleGradeCoordInput').checked = false;
   document.getElementById('roleSubjectCoordInput').checked = false;
@@ -631,8 +741,12 @@ function saveCurrentTeacherToRoster() {
   const calc = state.currentCalculated || MOE_RULES.calculateWorkload({
     age: tObj.age,
     reform: tObj.reform,
+    ofekType: tObj.ofekType,
+    ozAgreement: tObj.ozAgreement,
     frontalOz: tObj.frontalOz,
-    frontalOfek: tObj.frontalOfek
+    frontalOfek: tObj.frontalOfek,
+    isMother: tObj.isMother,
+    motherOption: tObj.motherOption
   });
 
   if (calc.total.frontalHours <= 0) {
@@ -647,9 +761,11 @@ function saveCurrentTeacherToRoster() {
     age: tObj.age,
     reform: tObj.reform,
     ofekType: tObj.ofekType,
+    ozAgreement: tObj.ozAgreement || 'updated38',
     frontalOz: tObj.frontalOz,
     frontalOfek: tObj.frontalOfek,
     isMother: tObj.isMother,
+    motherOption: tObj.motherOption || 'reduction',
     roleEducator: tObj.roleEducator,
     roleGradeCoord: tObj.roleGradeCoord,
     roleSubjectCoord: tObj.roleSubjectCoord,
@@ -688,9 +804,11 @@ function editTeacher(id) {
     age: item.age,
     reform: item.reform,
     ofekType: item.ofekType || 'junior_high',
+    ozAgreement: item.ozAgreement || 'updated38',
     frontalOz: item.frontalOz || 0,
     frontalOfek: item.frontalOfek || 0,
     isMother: item.isMother || false,
+    motherOption: item.motherOption || 'reduction',
     roleEducator: item.roleEducator || false,
     roleGradeCoord: item.roleGradeCoord || false,
     roleSubjectCoord: item.roleSubjectCoord || false,
@@ -706,6 +824,15 @@ function editTeacher(id) {
   document.getElementById('frontalOfekInput').value = state.currentTeacher.frontalOfek;
   document.getElementById('otherRoleHoursInput').value = state.currentTeacher.otherRoleHours;
   document.getElementById('isMotherInput').checked = state.currentTeacher.isMother;
+  
+  const motherOptWrap = document.getElementById('motherOptionWrapper');
+  if (motherOptWrap) motherOptWrap.classList.toggle('hidden', !state.currentTeacher.isMother);
+  const motherOptSel = document.getElementById('motherOptionSelect');
+  if (motherOptSel) motherOptSel.value = state.currentTeacher.motherOption;
+
+  const ozAgreementEl = document.getElementById('ozAgreementSelect');
+  if (ozAgreementEl) ozAgreementEl.value = state.currentTeacher.ozAgreement;
+
   document.getElementById('roleEducatorInput').checked = state.currentTeacher.roleEducator;
   document.getElementById('roleGradeCoordInput').checked = state.currentTeacher.roleGradeCoord;
   document.getElementById('roleSubjectCoordInput').checked = state.currentTeacher.roleSubjectCoord;
@@ -898,12 +1025,14 @@ function loadDemoData() {
     {
       name: 'שרה לוי',
       code: '028475912',
-      age: 48,
+      age: 44,
       reform: 'combined',
       ofekType: 'junior_high',
+      ozAgreement: 'updated38',
       frontalOz: 12,
       frontalOfek: 10,
       isMother: true,
+      motherOption: 'reduction',
       roleEducator: true,
       roleGradeCoord: false,
       roleSubjectCoord: false,
@@ -912,12 +1041,14 @@ function loadDemoData() {
     {
       name: 'דוד כהן',
       code: '015948372',
-      age: 56, // Age reduction!
+      age: 56, // Age reduction! (בסיס 21 בעוז מעודכן)
       reform: 'oz',
       ofekType: 'junior_high',
+      ozAgreement: 'updated38',
       frontalOz: 21, // 100% full time with age reduction
       frontalOfek: 0,
       isMother: false,
+      motherOption: 'reduction',
       roleEducator: false,
       roleGradeCoord: true,
       roleSubjectCoord: false,
@@ -929,9 +1060,11 @@ function loadDemoData() {
       age: 38,
       reform: 'ofek',
       ofekType: 'junior_high',
+      ozAgreement: 'updated38',
       frontalOz: 0,
-      frontalOfek: 21, // 100%
+      frontalOfek: 23, // 100% באופק חט"ב (בסיס 23)
       isMother: true,
+      motherOption: 'salary',
       roleEducator: true,
       roleGradeCoord: false,
       roleSubjectCoord: false,
@@ -940,12 +1073,14 @@ function loadDemoData() {
     {
       name: 'מיכאל אברמוביץ\'',
       code: '049182374',
-      age: 53, // Age reduction 2 hours
+      age: 52, // Age reduction 2 hours (בסיס 21 באופק, 23 בעוז)
       reform: 'combined',
       ofekType: 'junior_high',
+      ozAgreement: 'updated38',
       frontalOz: 14,
       frontalOfek: 12, // Overtime teacher!
       isMother: false,
+      motherOption: 'reduction',
       roleEducator: false,
       roleGradeCoord: false,
       roleSubjectCoord: true,
@@ -954,12 +1089,14 @@ function loadDemoData() {
     {
       name: 'מרים ששון',
       code: '058291047',
-      age: 58, // Age reduction 4 hours in Oz!
+      age: 58, // Age reduction 4 hours in Oz Classic! (בסיס 20)
       reform: 'oz',
       ofekType: 'junior_high',
+      ozAgreement: 'classic40',
       frontalOz: 20, // 100%
       frontalOfek: 0,
       isMother: false,
+      motherOption: 'reduction',
       roleEducator: false,
       roleGradeCoord: false,
       roleSubjectCoord: false,
@@ -971,9 +1108,12 @@ function loadDemoData() {
     const calc = MOE_RULES.calculateWorkload({
       age: t.age,
       reform: t.reform,
+      ofekType: t.ofekType,
+      ozAgreement: t.ozAgreement,
       frontalOz: t.frontalOz,
       frontalOfek: t.frontalOfek,
       isMother: t.isMother,
+      motherOption: t.motherOption,
       roleEducator: t.roleEducator,
       roleGradeCoord: t.roleGradeCoord,
       roleSubjectCoord: t.roleSubjectCoord,
@@ -991,7 +1131,7 @@ function loadDemoData() {
 
   saveRosterToStorage();
   renderRoster();
-  showToast(state.currentLang === 'he' ? '5 מורים לדוגמה נטענו בהצלחה!' : '5 sample teachers loaded!');
+  showToast(state.currentLang === 'he' ? '5 מורים לדוגמה נטענו בהצלחה לפי החישובים המעודכנים!' : '5 sample teachers loaded!');
 }
 
 // Export to CSV / Excel with UTF-8 BOM
@@ -1003,8 +1143,8 @@ function exportRosterToCSV() {
 
   const isHe = state.currentLang === 'he';
   const headers = isHe
-    ? ['שם המורה', 'ת"ז / קוד', 'גיל', 'רפורמה', '% משרה', 'שעות פרונטליות', 'שעות פרטניות', 'שעות שהייה', 'סה"כ שבועיות', 'שעות נוספות', 'הפחתת שעות גיל', 'סטטוס']
-    : ['Teacher Name', 'ID Code', 'Age', 'Reform', 'Job %', 'Frontal Hours', 'Individual Hours', 'Staying Hours', 'Weekly Total', 'Overtime Hours', 'Age Hours Reduction', 'Status'];
+    ? ['שם המורה', 'ת"ז / קוד', 'גיל', 'רפורמה', 'הסכם עוז', '% משרה', 'שעות פרונטליות', 'שעות פרטניות', 'שעות שהייה בפועל', 'שיבוץ שהייה מומלץ', 'סה"כ שבועיות', 'שעות נוספות', 'הפחתת שעות גיל', 'הטבת משרת אם', 'סטטוס']
+    : ['Teacher Name', 'ID Code', 'Age', 'Reform', 'Oz Track', 'Job %', 'Frontal Hours', 'Individual Hours', 'Actual Staying Hours', 'Scheduled Staying Recommendation', 'Weekly Total', 'Overtime Hours', 'Age Hours Reduction', 'Motherhood Status', 'Status'];
 
   const rows = state.roster.map(tItem => {
     const c = tItem.calculated.total;
@@ -1013,18 +1153,33 @@ function exportRosterToCSV() {
     else if (tItem.reform === 'ofek') reformName = isHe ? 'אופק חדש' : 'Ofek Hadash';
     else reformName = isHe ? 'משרה משולבת' : 'Combined';
 
+    const ozTrackName = (tItem.ozAgreement === 'classic40') ? '40h' : '38h';
+    let motherStatusStr = isHe ? 'לא' : 'No';
+    if (tItem.isMother) {
+      if (c.motherHourEligible) {
+        motherStatusStr = (tItem.motherOption === 'salary') 
+          ? (isHe ? 'תוספת 7% שכר' : '7% Salary') 
+          : (isHe ? 'קיצור 2 ש"ש' : '-2h Staying');
+      } else {
+        motherStatusStr = isHe ? 'מתחת ל-79%' : '<79%';
+      }
+    }
+
     return [
       `"${tItem.name.replace(/"/g, '""')}"`,
       `"${tItem.code || ''}"`,
       tItem.age,
       `"${reformName}"`,
+      `"${ozTrackName}"`,
       c.jobPercentage.toFixed(2),
       c.frontalHours.toFixed(1),
       c.individualHours.toFixed(1),
       c.stayingHours.toFixed(1),
+      c.scheduledStayingHoursRounded.toFixed(1),
       c.totalWeeklyHours.toFixed(1),
       c.overtimeFrontalHours.toFixed(1),
       c.ageHoursAwarded.toFixed(1),
+      `"${motherStatusStr}"`,
       `"${c.statusLabelHe || c.status}"`
     ];
   });
@@ -1046,9 +1201,12 @@ function printTeacherOfficialSheet() {
   const calc = state.currentCalculated || MOE_RULES.calculateWorkload({
     age: tObj.age,
     reform: tObj.reform,
+    ofekType: tObj.ofekType,
+    ozAgreement: tObj.ozAgreement,
     frontalOz: tObj.frontalOz,
     frontalOfek: tObj.frontalOfek,
     isMother: tObj.isMother,
+    motherOption: tObj.motherOption,
     roleEducator: tObj.roleEducator,
     roleGradeCoord: tObj.roleGradeCoord,
     roleSubjectCoord: tObj.roleSubjectCoord,
@@ -1069,7 +1227,7 @@ function printTeacherOfficialSheet() {
     <div class="p-8 border-2 border-slate-300 rounded-xl max-w-4xl mx-auto my-6 bg-white">
       <div class="flex justify-between items-center border-b pb-4 mb-6">
         <div class="flex items-center gap-4">
-          <img src="school-logo.png" alt="קמפוס עירוני רבין" class="h-20 w-auto object-contain">
+          <img src="school-logo.png?v=2" alt="קמפוס עירוני רבין" class="h-20 w-auto object-contain">
           <div>
             <div class="text-xs font-black text-purple-900 tracking-wider">${t('schoolName')} | ${t('schoolMotto')}</div>
             <h1 class="text-2xl font-black text-slate-900">${t('officialReportHeader')}</h1>
@@ -1109,7 +1267,7 @@ function printTeacherOfficialSheet() {
               <td class="border border-slate-300 p-2">${calc.ofek.baseFrontal}</td>
               <td class="border border-slate-300 p-2 font-bold">${calc.ofek.frontal.toFixed(1)}</td>
               <td class="border border-slate-300 p-2">${calc.ofek.individual.toFixed(1)}</td>
-              <td class="border border-slate-300 p-2">${calc.ofek.staying.toFixed(1)}</td>
+              <td class="border border-slate-300 p-2 font-bold text-amber-700">${calc.ofek.staying.toFixed(1)}</td>
               <td class="border border-slate-300 p-2 font-bold">${calc.ofek.percentage.toFixed(2)}%</td>
               <td class="border border-slate-300 p-2">${calc.ofek.totalHours.toFixed(1)}</td>
             </tr>
@@ -1120,7 +1278,7 @@ function printTeacherOfficialSheet() {
               <td class="border border-slate-300 p-2">${calc.oz.baseFrontal}</td>
               <td class="border border-slate-300 p-2 font-bold">${calc.oz.frontal.toFixed(1)}</td>
               <td class="border border-slate-300 p-2">${calc.oz.individual.toFixed(1)}</td>
-              <td class="border border-slate-300 p-2">${calc.oz.staying.toFixed(1)}</td>
+              <td class="border border-slate-300 p-2 font-bold text-amber-700">${calc.oz.staying.toFixed(1)}</td>
               <td class="border border-slate-300 p-2 font-bold">${calc.oz.percentage.toFixed(2)}%</td>
               <td class="border border-slate-300 p-2">${calc.oz.totalHours.toFixed(1)}</td>
             </tr>
@@ -1152,22 +1310,24 @@ function printTeacherOfficialSheet() {
             <td class="border border-slate-300 p-2">-</td>
             <td class="border border-slate-300 p-2 text-primary font-black">${(calc.total.frontalHours + (calc.roleDetails.countInPercentage ? calc.total.roleHours : 0)).toFixed(1)}</td>
             <td class="border border-slate-300 p-2">${calc.total.individualHours.toFixed(1)}</td>
-            <td class="border border-slate-300 p-2">${calc.total.stayingHours.toFixed(1)}</td>
+            <td class="border border-slate-300 p-2 font-black text-amber-700">${calc.total.stayingHours.toFixed(1)}</td>
             <td class="border border-slate-300 p-2 text-primary font-black">${calc.total.jobPercentage.toFixed(2)}%</td>
             <td class="border border-slate-300 p-2 font-black">${calc.total.totalWeeklyHours.toFixed(1)}</td>
           </tr>
         </tbody>
       </table>
 
-      <div class="grid grid-cols-2 gap-4 mb-8 text-sm">
+      <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
         <div class="p-3 bg-slate-50 rounded border border-slate-200">
           <div>סטטוס משרה: <strong>${calc.total.statusLabelHe || calc.total.status}</strong></div>
           <div>שעות גיל שהוענקו: <strong>${calc.total.ageHoursAwarded.toFixed(1)} ש"ש</strong></div>
           <div>שעות תפקיד: <strong>${calc.total.roleHours.toFixed(1)} ש"ש</strong></div>
         </div>
         <div class="p-3 bg-slate-50 rounded border border-slate-200">
+          <div>שעות שהייה תקניות: <strong>${calc.total.nominalStayingHours.toFixed(2)} ש"ש</strong></div>
+          <div>המלצת שיבוץ שהייה במערכת: <strong class="text-amber-800">${calc.total.scheduledStayingHoursRounded.toFixed(1)} ש"ש</strong></div>
           <div>שעות נוספות מעל 100%: <strong>${calc.total.overtimeFrontalHours.toFixed(1)} ש"ש (${calc.total.overtimePercentage.toFixed(1)}%)</strong></div>
-          <div>הטבת משרת אם: <strong>${calc.total.motherHourEligible ? 'פעילה (הופחתו 2 ש"ש שהייה)' : (tObj.isMother ? 'לא זכאית (מתחת ל-79%)' : 'לא')}</strong></div>
+          <div>הטבת משרת אם: <strong>${calc.total.motherHourEligible ? (calc.total.motherHourStatus === 'active_reduction' ? 'פעילה (קיצור 2 ש"ש שהייה)' : 'פעילה (+7% שכר)') : (tObj.isMother ? 'לא זכאית (מתחת ל-79%)' : 'לא')}</strong></div>
         </div>
       </div>
 
@@ -1203,8 +1363,9 @@ function calculateReversePlanner() {
   const age = state.reverseAge;
   const reform = state.reverseReform;
   const split = state.reverseSplitRatio;
+  const ozAgreement = state.reverseOzAgreement || 'updated38';
 
-  const calc = MOE_RULES.calculateRequiredHours(target, age, reform, split);
+  const calc = MOE_RULES.calculateRequiredHours(target, age, reform, split, ozAgreement);
 
   let html = `
     <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 mb-6">
@@ -1229,7 +1390,8 @@ function calculateReversePlanner() {
         </div>
         <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
           <div class="text-xs text-slate-500 mb-1">${t('stayingHoursCard')}</div>
-          <div class="text-xl font-bold text-slate-800">${calc.total.stayingHours.toFixed(1)}</div>
+          <div class="text-xl font-bold text-amber-700">${calc.total.stayingHours.toFixed(1)}</div>
+          <div class="text-[10px] text-slate-500 mt-0.5">שיבוץ: ${calc.total.scheduledStayingHoursRounded.toFixed(1)} ש"ש</div>
         </div>
         <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
           <div class="text-xs text-slate-500 mb-1">${t('totalWeeklyHours')}</div>
@@ -1248,9 +1410,9 @@ function calculateReversePlanner() {
             ${t('reformOfekOnly')} (${calc.ofek.percentage.toFixed(1)}%)
           </div>
           <ul class="text-sm space-y-1.5 text-slate-700">
-            <li>שעות פרונטליות נדרשות: <strong class="text-blue-700 text-base">${calc.ofek.frontal.toFixed(1)}</strong></li>
+            <li>שעות פרונטליות נדרשות: <strong class="text-blue-700 text-base">${calc.ofek.frontal.toFixed(1)}</strong> (בסיס ${calc.ofek.baseFrontal})</li>
             <li>שעות פרטניות נגזרות: <strong>${calc.ofek.individual.toFixed(1)}</strong></li>
-            <li>שעות שהייה נגזרות: <strong>${calc.ofek.staying.toFixed(1)}</strong></li>
+            <li>שעות שהייה נגזרות: <strong class="text-amber-700 font-bold">${calc.ofek.staying.toFixed(1)}</strong></li>
             <li>סה"כ שעות שבועיות באופק: <strong>${calc.ofek.totalHours.toFixed(1)}</strong></li>
           </ul>
         </div>
@@ -1261,9 +1423,9 @@ function calculateReversePlanner() {
             ${t('reformOzOnly')} (${calc.oz.percentage.toFixed(1)}%)
           </div>
           <ul class="text-sm space-y-1.5 text-slate-700">
-            <li>שעות פרונטליות נדרשות: <strong class="text-indigo-700 text-base">${calc.oz.frontal.toFixed(1)}</strong></li>
+            <li>שעות פרונטליות נדרשות: <strong class="text-indigo-700 text-base">${calc.oz.frontal.toFixed(1)}</strong> (בסיס ${calc.oz.baseFrontal})</li>
             <li>שעות פרטניות נגזרות: <strong>${calc.oz.individual.toFixed(1)}</strong></li>
-            <li>שעות שהייה נגזרות: <strong>${calc.oz.staying.toFixed(1)}</strong></li>
+            <li>שעות שהייה נגזרות: <strong class="text-amber-700 font-bold">${calc.oz.staying.toFixed(1)}</strong></li>
             <li>סה"כ שעות שבועיות בעוז: <strong>${calc.oz.totalHours.toFixed(1)}</strong></li>
           </ul>
         </div>
